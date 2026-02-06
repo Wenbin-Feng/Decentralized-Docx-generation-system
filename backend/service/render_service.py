@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 import asyncio
 from config.settings import settings
 from openai import OpenAI
+from logger import logger
 
 class RenderService:
     """
@@ -16,7 +17,7 @@ class RenderService:
         pass    
     
 
-    def render(self, template_path: str, context: dict) -> str:
+    def render(self, json_path: str, template_path: str, output_path: str) -> str:
         pass
 
     def call_llm(self, system_prompt: str, user_prompt: str) -> str:
