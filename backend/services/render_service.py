@@ -19,7 +19,26 @@ class RenderService:
         self.executor = ThreadPoolExecutor(max_workers=4)
         self.template_dir = settings.TEMPLATE_DIR
         self.prompt_dir = settings.PROMPT_DIR
-        self.out_path = settings.OUTPUT_DIR
+        self.output_dir = settings.OUTPUT_DIR
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+
+    async def fill_template(self, user_text: str, template_id: str) -> str:
+        res = await self.generate_data_from_text(user_text, template_id)
+        if res.get("status") == "success":
+            json_data = res.get("message")
+            return {
+                "output_path": self.render(json_data, template_id),
+                "status": "success",
+                "json_data": json_data,
+                "msg":"Document generated successfully"
+            }
+        else:
+            return {
+                "output_path": "",
+                "status": "error",
+                "json_data": {},
+                "msg":"Document rendering failed"
+            }
 
     async def generate_data_from_text(self, user_text: str, template_id: str) -> str:
         system_prompt = DiskStorage.read_file(self.prompt_dir)
@@ -32,6 +51,7 @@ class RenderService:
         {template_schema}
         """
         try:
+            logger.info(f"[GENERATION] Generating data from text: {user_text}")
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(self.executor, self.call_llm, system_prompt, user_prompt)
             return {
@@ -44,7 +64,12 @@ class RenderService:
             raise e
 
     def render(self, json_data: Dict[str, Any], template_id: str) -> str:
-        pass
+        logger.info(f"[GENERATION] Rendering data to word: {json_data}")
+        template_path = self.template_dir / template_id / "template.docx"
+        output_path = self.output_dir / f"{template_id}_generation.docx"
+        WordHandler.fill_template(template_path, json_data, output_path)
+        logger.info(f"[GENERATION] Document generated successfully: {output_path}")
+        return str(output_path)
 
     def call_llm(self, system_prompt: str, user_prompt: str) -> str:
         if self.model_provider == "openai":
