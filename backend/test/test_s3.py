@@ -1,4 +1,4 @@
-from service.bucket import s3 as storage
+from services.bucket import s3 as storage
 import os
 
 

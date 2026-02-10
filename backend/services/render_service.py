@@ -4,6 +4,11 @@ import asyncio
 from config.settings import settings
 from openai import OpenAI
 from logger import logger
+from pathlib import Path
+from .disk_storage import DiskStorage
+import json
+from handlers.word_handler import WordHandler
+
 
 class RenderService:
     """
@@ -12,12 +17,33 @@ class RenderService:
     def __init__(self):
         self.model_provider = settings.MODEL_PROVIDER
         self.executor = ThreadPoolExecutor(max_workers=4)
+        self.template_dir = settings.TEMPLATE_DIR
+        self.prompt_dir = settings.PROMPT_DIR
+        self.out_path = settings.OUTPUT_DIR
 
     async def generate_data_from_text(self, user_text: str, template_id: str) -> str:
-        pass    
-    
+        system_prompt = DiskStorage.read_file(self.prompt_dir)
+        template_schema = DiskStorage.read_file(self.template_dir / template_id / "schema.json")
 
-    def render(self, json_path: str, template_path: str, output_path: str) -> str:
+        user_prompt = f"""
+        请根据以下内容生成json数据:
+        {user_text}
+        你必须严格遵循如下模版来生成json数据:
+        {template_schema}
+        """
+        try:
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(self.executor, self.call_llm, system_prompt, user_prompt)
+            return {
+                "message": self._extract_json_from_response(response),
+                "status": "success",
+                "template_id": template_id
+            }
+        except Exception as e:
+            logger.error(f"[GENERATION] Failed to generate data: {str(e)}")
+            raise e
+
+    def render(self, json_data: Dict[str, Any], template_id: str) -> str:
         pass
 
     def call_llm(self, system_prompt: str, user_prompt: str) -> str:
@@ -31,7 +57,7 @@ class RenderService:
         api_key = settings.OPENAI_API_KEY
         base_url = settings.OPENAI_BASE_URL
         model_id = settings.OPENAI_MODEL_ID
-
+    
         if not api_key:
             raise ValueError("OPENAI_API_KEY not set")
 

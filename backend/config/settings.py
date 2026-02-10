@@ -22,6 +22,11 @@ class Config(BaseSettings):
     ANTHROPIC_API_KEY: str
     ANTHROPIC_BASE_URL: str
     ANTHROPIC_MODEL_ID: str
+    
+    # Local Storage
+    TEMPLATE_DIR: Path = Proj_root / "storage" / "templates"
+    PROMPT_DIR: Path = Proj_root / "prompt.md"
+    OUTPUT_DIR: Path = Proj_root / "storage" / "output"
 
     model_config = SettingsConfigDict(
         env_file= Proj_root / ".env",

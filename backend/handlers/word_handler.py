@@ -6,6 +6,14 @@ class WordHandler:
 
     @staticmethod
     def fill_template(template_path, data, output_path) -> None:
+        """
+        填充word模版
+        
+        Args:
+            template_path: word模版文件路径
+            data: json数据
+            output_path: 输出路径
+        """
         doc = DocxTemplate(template_path)
         doc.render(data)
         doc.save(output_path)
