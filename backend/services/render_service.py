@@ -1,19 +1,22 @@
-from utils import ai_chat
-from concurrent.futures import ThreadPoolExecutor
 import asyncio
-from config.settings import settings
-from openai import OpenAI
-from logger import logger
-from pathlib import Path
-from .disk_storage import DiskStorage
 import json
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Dict
+
+from config.settings import settings
 from handlers.word_handler import WordHandler
+from logger import logger
+from openai import OpenAI
+from utils import ai_chat
+
+from .disk_storage import DiskStorage
 
 
 class RenderService:
     """
     word渲染服务,包括了json数据生成和模版渲染
     """
+
     def __init__(self):
         self.model_provider = settings.MODEL_PROVIDER
         self.executor = ThreadPoolExecutor(max_workers=4)
@@ -22,27 +25,31 @@ class RenderService:
         self.output_dir = settings.OUTPUT_DIR
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-    async def fill_template(self, user_text: str, template_id: str) -> str:
+    async def fill_template(self, user_text: str, template_id: str) -> Dict[str, Any]:
         res = await self.generate_data_from_text(user_text, template_id)
         if res.get("status") == "success":
-            json_data = res.get("message")
+            json_data = res["message"]
             return {
                 "output_path": self.render(json_data, template_id),
                 "status": "success",
                 "json_data": json_data,
-                "msg":"Document generated successfully"
-            }
-        else:
-            return {
-                "output_path": "",
-                "status": "error",
-                "json_data": {},
-                "msg":"Document rendering failed"
+                "msg": "Document generated successfully",
             }
 
-    async def generate_data_from_text(self, user_text: str, template_id: str) -> str:
+        return {
+            "output_path": "",
+            "status": "error",
+            "json_data": {},
+            "msg": "Document rendering failed",
+        }
+
+    async def generate_data_from_text(
+        self, user_text: str, template_id: str
+    ) -> Dict[str, Any]:
         system_prompt = DiskStorage.read_file(self.prompt_dir)
-        template_schema = DiskStorage.read_file(self.template_dir / template_id / "schema.json")
+        template_schema = DiskStorage.read_file(
+            self.template_dir / template_id / "schema.json"
+        )
 
         user_prompt = f"""
         请根据以下内容生成json数据:
@@ -53,18 +60,19 @@ class RenderService:
         try:
             logger.info(f"[GENERATION] Generating data from text: {user_text}")
             loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(self.executor, self.call_llm, system_prompt, user_prompt)
+            response = await loop.run_in_executor(
+                self.executor, self.call_llm, system_prompt, user_prompt
+            )
             return {
                 "message": self._extract_json_from_response(response),
                 "status": "success",
-                "template_id": template_id
+                "template_id": template_id,
             }
         except Exception as e:
             logger.error(f"[GENERATION] Failed to generate data: {str(e)}")
             raise e
 
     def render(self, json_data: Dict[str, Any], template_id: str) -> str:
-        logger.info(f"[GENERATION] Rendering data to word: {json_data}")
         template_path = self.template_dir / template_id / "template.docx"
         output_path = self.output_dir / f"{template_id}_generation.docx"
         WordHandler.fill_template(template_path, json_data, output_path)
@@ -76,13 +84,14 @@ class RenderService:
             return self.call_openai(system_prompt, user_prompt)
         if self.model_provider == "anthropic":
             return self.call_anthropic(system_prompt, user_prompt)
-        return ai_chat.chat(system_prompt, user_prompt)
+        ai = ai_chat.AIChat()
+        return ai.chat(system_prompt, user_prompt)
 
     def call_openai(self, system_prompt: str, user_prompt: str) -> str:
         api_key = settings.OPENAI_API_KEY
         base_url = settings.OPENAI_BASE_URL
         model_id = settings.OPENAI_MODEL_ID
-    
+
         if not api_key:
             raise ValueError("OPENAI_API_KEY not set")
 
@@ -100,9 +109,9 @@ class RenderService:
             model=model_id,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
+                {"role": "user", "content": user_prompt},
             ],
-            temperature=0.7
+            temperature=0.7,
         )
 
         response_text = completion.choices[0].message.content
@@ -128,16 +137,15 @@ class RenderService:
             max_tokens=8192,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
+                {"role": "user", "content": user_prompt},
             ],
-            temperature=0.7
+            temperature=0.7,
         )
 
         response_text = response.choices[0].message.content
         logger.info(f"[GENERATION] Received response: {len(response_text)} characters")
 
         return response_text
-
 
     def _extract_json_from_response(self, response_text: str) -> Dict[str, Any]:
         """
@@ -177,12 +185,14 @@ class RenderService:
             last_brace = text.rfind("}")
 
             if first_brace != -1 and last_brace != -1:
-                json_text = text[first_brace:last_brace + 1]
+                json_text = text[first_brace : last_brace + 1]
                 try:
                     data = json.loads(json_text)
                     return data
                 except json.JSONDecodeError:
                     pass
 
-            logger.error(f"[GENERATION] Failed to parse JSON from response: {text[:500]}...")
+            logger.error(
+                f"[GENERATION] Failed to parse JSON from response: {text[:500]}..."
+            )
             raise ValueError(f"Failed to parse JSON from LLM response: {str(e)}")

@@ -1,5 +1,6 @@
-from services.bucket import s3 as storage
 import os
+
+from services.bucket import s3 as storage
 
 
 def test_supabase_s3_crud():
@@ -45,12 +46,13 @@ def test_supabase_s3_crud():
 
     except Exception as e:
         print(f"\n❌ 测试失败: {str(e)}")
-    
+
     finally:
         # 清理本地残留的测试文件
         for f in [TEST_FILE, DOWNLOADED_FILE]:
             if os.path.exists(f):
                 os.remove(f)
+
 
 if __name__ == "__main__":
     test_supabase_s3_crud()

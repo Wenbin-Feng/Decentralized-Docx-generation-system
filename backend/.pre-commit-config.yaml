@@ -1,0 +1,34 @@
+repos:
+  - repo: https://github.com/PyCQA/autoflake
+    rev: v2.3.1
+    hooks:
+      - id: autoflake
+        args: ["--in-place", "--remove-all-unused-imports", "--remove-unused-variables"]
+        exclude: ^migrations/|^uploads/
+
+  - repo: https://github.com/pycqa/isort
+    rev: 6.0.0
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
+
+  - repo: https://github.com/psf/black
+    rev: 25.1.0  # 使用适配 Python 3.14 的新版本
+    hooks:
+      - id: black
+
+  - repo: https://github.com/pycqa/pylint
+    rev: v3.3.0
+    hooks:
+      - id: pylint
+        exclude: ^test/
+        # 删掉了不存在的 pylint.conf 引用，让它用默认规则
+        args: ["--disable=C0114,C0115,C0116", "--disable=C0114,C0115,C0116,R0903,E0401"] 
+        additional_dependencies: [types-requests, types-redis, types-pytz]
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.14.0 # 现代版本不再需要 typed-ast
+    hooks:
+      - id: mypy
+        exclude: ^test/
+        additional_dependencies: [types-requests, types-redis, types-pytz]

@@ -1,5 +1,6 @@
 from docxtpl import DocxTemplate
 
+
 class WordHandler:
     def __init__(self):
         raise RuntimeError("直接使用，不用初始化")
@@ -8,7 +9,7 @@ class WordHandler:
     def fill_template(template_path, data, output_path) -> None:
         """
         填充word模版
-        
+
         Args:
             template_path: word模版文件路径
             data: json数据
