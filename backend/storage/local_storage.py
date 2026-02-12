@@ -3,7 +3,7 @@ import aiofiles
 from .base import StorageBase
 from typing import List, override
 from config.settings import settings
-
+from fastapi import UploadFile
 class DiskStorage(StorageBase):
     def __init__(self, base_path: str = "./storage_data"):
         self.base_path = os.path.abspath(str(base_path))
@@ -11,9 +11,16 @@ class DiskStorage(StorageBase):
     
     def _get_full_path(self, key: str) -> str:
         return os.path.join(self.base_path, str(key).lstrip("/"))
+        
+    @override
+    async def upload(self, file: UploadFile, key: str):
+        full_path = self._get_full_path(key)
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        async with aiofiles.open(full_path, "wb") as f:
+            await f.write(file.read())
 
     @override
-    async def upload(self, key: str, content: str):
+    async def write_file(self, key: str, content: str):
         full_path = self._get_full_path(key)
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
         async with aiofiles.open(full_path, "w", encoding="utf-8") as f:

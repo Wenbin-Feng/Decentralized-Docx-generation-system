@@ -9,7 +9,7 @@ from logger import logger
 from openai import OpenAI
 from utils import ai_chat
 from storage.base import StorageBase
-
+from storage import get_storage
 class RenderService:
     """
     word渲染服务,包括了json数据生成和模版渲染
@@ -69,6 +69,7 @@ class RenderService:
             raise e
 
     def render(self, json_data: Dict[str, Any], template_id: str) -> str:
+        logger.info(f"[GENERATION] Rendering document: {json_data}")
         template_path = self.template_prefix / template_id / "template.docx"
         output_path = self.output_prefix / f"{template_id}_generation.docx"
         output_path = WordHandler.fill_template(template_path, json_data, output_path)
@@ -192,3 +193,7 @@ class RenderService:
                 f"[GENERATION] Failed to parse JSON from response: {text[:500]}..."
             )
             raise ValueError(f"Failed to parse JSON from LLM response: {str(e)}")
+
+
+async def get_RenderService() -> RenderService:
+    return RenderService(await get_storage())

@@ -1,5 +1,5 @@
-from .render_service import RenderService
+from .render_service import get_RenderService
 
 __all__ = [
-    "RenderService"
+    "get_RenderService"
 ]

@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError
 from config.settings import settings
 from .base import StorageBase
 from botocore.config import Config
-
+from fastapi import UploadFile
 class SupabaseStorage(StorageBase):
     _instance = None  # 用于存储全局单例
     _lock = asyncio.Lock()
@@ -43,15 +43,20 @@ class SupabaseStorage(StorageBase):
             yield client
 
     @override
-    async def upload(self, key: str, content: str):
+    async def upload(self, file: UploadFile, key: str):
         async with self._get_client() as client:
-            await client.put_object(Bucket=self.bucket, Key=key, Body=content)
+            await client.put_object(Bucket=self.bucket, Key=str(key), Body=file.file)
+
+    @override
+    async def write_file(self, key: str, content: str):
+        async with self._get_client() as client:
+            await client.put_object(Bucket=self.bucket, Key=str(key), Body=content)
         return True
 
     @override
     async def read(self, key: str) -> str:
         async with self._get_client() as client:
-            resp = await client.get_object(Bucket=self.bucket, Key=key)
+            resp = await client.get_object(Bucket=self.bucket, Key=str(key))
             data = await resp["Body"].read()
             return data.decode("utf-8")
 
@@ -59,18 +64,18 @@ class SupabaseStorage(StorageBase):
     @override
     async def delete(self, key: str):
         async with self._get_client() as client:
-            await client.delete_object(Bucket=self.bucket, Key=key)
+            await client.delete_object(Bucket=self.bucket, Key=str(key))
         
     @override
     async def get_url(self, key: str) -> str:
         async with self._get_client() as client:
-            return await client.generate_presigned_url("get_object", Params={"Bucket": self.bucket, "Key": key}, ExpiresIn=3600)
+            return await client.generate_presigned_url("get_object", Params={"Bucket": self.bucket, "Key": str(key)}, ExpiresIn=3600)
 
     @override
     async def exists(self, key: str) -> bool:
         try:
             async with self._get_client() as client:
-                await client.head_object(Bucket=self.bucket, Key=key)
+                await client.head_object(Bucket=self.bucket, Key=str(key))
             return True
         except ClientError as e:
             if e.response["Error"]["Code"] == "404":
