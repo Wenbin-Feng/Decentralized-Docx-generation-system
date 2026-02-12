@@ -8,22 +8,20 @@ from handlers.word_handler import WordHandler
 from logger import logger
 from openai import OpenAI
 from utils import ai_chat
-
-from .disk_storage import DiskStorage
-
+from storage.base import StorageBase
 
 class RenderService:
     """
     word渲染服务,包括了json数据生成和模版渲染
     """
 
-    def __init__(self):
+    def __init__(self, storage: StorageBase):
         self.model_provider = settings.MODEL_PROVIDER
         self.executor = ThreadPoolExecutor(max_workers=4)
-        self.template_dir = settings.TEMPLATE_DIR
-        self.prompt_dir = settings.PROMPT_DIR
-        self.output_dir = settings.OUTPUT_DIR
-        self.output_dir.mkdir(parents=True, exist_ok=True)
+        self.template_prefix = settings.TEMPLATE_PREFIX
+        self.prompt_prefix = settings.PROMPT_PREFIX
+        self.output_prefix = settings.OUTPUT_PREFIX
+        self.storage = storage
 
     async def fill_template(self, user_text: str, template_id: str) -> Dict[str, Any]:
         res = await self.generate_data_from_text(user_text, template_id)
@@ -46,10 +44,8 @@ class RenderService:
     async def generate_data_from_text(
         self, user_text: str, template_id: str
     ) -> Dict[str, Any]:
-        system_prompt = DiskStorage.read_file(self.prompt_dir)
-        template_schema = DiskStorage.read_file(
-            self.template_dir / template_id / "schema.json"
-        )
+        system_prompt = await self.storage.read(self.prompt_prefix)
+        template_schema = await self.storage.read(self.template_prefix / template_id / "schema.json")
 
         user_prompt = f"""
         请根据以下内容生成json数据:
@@ -73,9 +69,9 @@ class RenderService:
             raise e
 
     def render(self, json_data: Dict[str, Any], template_id: str) -> str:
-        template_path = self.template_dir / template_id / "template.docx"
-        output_path = self.output_dir / f"{template_id}_generation.docx"
-        WordHandler.fill_template(template_path, json_data, output_path)
+        template_path = self.template_prefix / template_id / "template.docx"
+        output_path = self.output_prefix / f"{template_id}_generation.docx"
+        output_path = WordHandler.fill_template(template_path, json_data, output_path)
         logger.info(f"[GENERATION] Document generated successfully: {output_path}")
         return str(output_path)
 

@@ -15,6 +15,8 @@ class Config(BaseSettings):
     S3_REGION: str
     S3_ACCESS_KEY_ID: str
     S3_SECRET_ACCESS_KEY: str
+    BUCKET_NAME: str  = "test"  # S3 bucket name
+    STORAGE_TYPE: str = "local"
 
     MODEL_PROVIDER: str
     OPENAI_API_KEY: str
@@ -25,9 +27,11 @@ class Config(BaseSettings):
     ANTHROPIC_MODEL_ID: str
 
     # Local Storage
-    TEMPLATE_DIR: Path = Proj_root / "storage" / "templates"
-    PROMPT_DIR: Path = Proj_root / "prompt.md"
-    OUTPUT_DIR: Path = Proj_root / "storage" / "output"
+    LOCAL_STORAGE_PATH: Path = Proj_root / "data"
+    TEMPLATE_PREFIX: Path = "templates"
+    OUTPUT_PREFIX: Path = "output"
+    PROMPT_PREFIX: Path = "prompts/prompt.md"
+    
 
     model_config = SettingsConfigDict(
         env_file=Proj_root / ".env", env_file_encoding="utf-8"

@@ -1,1 +1,0 @@
-You are a word document generator, your task is to generate a json data based on the user's input and the template provided.
