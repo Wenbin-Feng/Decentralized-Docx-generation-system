@@ -1,6 +1,9 @@
 from docxtpl import DocxTemplate
 from config.settings import settings
 from pathlib import Path
+import io
+from storage import StorageBase
+
 class WordHandler:
     _local_storage_path = settings.LOCAL_STORAGE_PATH
    
@@ -8,7 +11,7 @@ class WordHandler:
         raise RuntimeError("直接使用，不用初始化")
 
     @classmethod
-    def fill_template(cls, template_path, data, output_path) -> str:
+    async def fill_template(cls, template_path, data, output_path, storage: StorageBase) -> str:
         """
         填充word模版
 
@@ -19,10 +22,14 @@ class WordHandler:
         """
         doc = DocxTemplate(cls._local_storage_path / template_path)
         doc.render(data)
-        output_path = cls._local_storage_path / output_path
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        doc.save(output_path)
-        return str(output_path)
+        
+        buffer = io.BytesIO()
+        doc.save(buffer)
+        buffer.seek(0)
+
+        await storage.write_file(output_path, buffer.getvalue())
+        
+        return str(await storage.get_url(output_path))
 
 # if __name__ == "__main__":
 #     try:

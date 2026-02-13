@@ -1,7 +1,7 @@
 import os
 import aiofiles
 from .base import StorageBase
-from typing import List, override
+from typing import List, override, Union
 from config.settings import settings
 from fastapi import UploadFile
 class DiskStorage(StorageBase):
@@ -11,7 +11,7 @@ class DiskStorage(StorageBase):
     
     def _get_full_path(self, key: str) -> str:
         return os.path.join(self.base_path, str(key).lstrip("/"))
-        
+
     @override
     async def upload(self, file: UploadFile, key: str):
         full_path = self._get_full_path(key)
@@ -20,11 +20,12 @@ class DiskStorage(StorageBase):
             await f.write(file.read())
 
     @override
-    async def write_file(self, key: str, content: str):
+    async def write_file(self, key: str, content: Union[str, bytes]):
         full_path = self._get_full_path(key)
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        async with aiofiles.open(full_path, "w", encoding="utf-8") as f:
-            await f.write(content)
+        data = content.encode("utf-8") if isinstance(content, str) else content
+        async with aiofiles.open(full_path, "wb") as f:
+            await f.write(data)
 
     @override
     async def delete(self, key: str):
@@ -54,6 +55,10 @@ class DiskStorage(StorageBase):
             return os.listdir(target_dir)
         return []
 
+    @override
+    async def close(self):
+        pass
+
 _local_instance = None
 
 def get_local_storage() -> DiskStorage:
@@ -62,3 +67,4 @@ def get_local_storage() -> DiskStorage:
         path = getattr(settings, "LOCAL_STORAGE_PATH", "./data")
         _local_instance = DiskStorage(base_path=str(path))
     return _local_instance
+

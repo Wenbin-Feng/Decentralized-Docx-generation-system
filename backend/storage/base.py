@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Union
 from fastapi import UploadFile
 class StorageBase(ABC):
     @abstractmethod
@@ -7,7 +7,7 @@ class StorageBase(ABC):
         pass
 
     @abstractmethod
-    async def write_file(self, key: str, content: str):
+    async def write_file(self, key: str, content: Union[str, bytes]):
         pass
 
     @abstractmethod
@@ -29,3 +29,8 @@ class StorageBase(ABC):
     @abstractmethod
     async def get_url(self, key: str) -> str:
         pass
+
+    @abstractmethod
+    async def close(self):
+        pass
+    

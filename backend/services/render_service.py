@@ -22,13 +22,15 @@ class RenderService:
         self.prompt_prefix = settings.PROMPT_PREFIX
         self.output_prefix = settings.OUTPUT_PREFIX
         self.storage = storage
+        self.prompt = None
+
 
     async def fill_template(self, user_text: str, template_id: str) -> Dict[str, Any]:
         res = await self.generate_data_from_text(user_text, template_id)
         if res.get("status") == "success":
             json_data = res["message"]
             return {
-                "output_path": self.render(json_data, template_id),
+                "output_path": await self.render(json_data, template_id),
                 "status": "success",
                 "json_data": json_data,
                 "msg": "Document generated successfully",
@@ -44,7 +46,9 @@ class RenderService:
     async def generate_data_from_text(
         self, user_text: str, template_id: str
     ) -> Dict[str, Any]:
-        system_prompt = await self.storage.read(self.prompt_prefix)
+        if self.prompt is None:
+            self.prompt = await self.storage.read(self.prompt_prefix)
+        system_prompt = self.prompt
         template_schema = await self.storage.read(self.template_prefix / template_id / "schema.json")
 
         user_prompt = f"""
@@ -68,11 +72,11 @@ class RenderService:
             logger.error(f"[GENERATION] Failed to generate data: {str(e)}")
             raise e
 
-    def render(self, json_data: Dict[str, Any], template_id: str) -> str:
+    async def render(self, json_data: Dict[str, Any], template_id: str) -> str:
         logger.info(f"[GENERATION] Rendering document: {json_data}")
         template_path = self.template_prefix / template_id / "template.docx"
         output_path = self.output_prefix / f"{template_id}_generation.docx"
-        output_path = WordHandler.fill_template(template_path, json_data, output_path)
+        output_path = await WordHandler.fill_template(template_path, json_data, output_path, self.storage)
         logger.info(f"[GENERATION] Document generated successfully: {output_path}")
         return str(output_path)
 

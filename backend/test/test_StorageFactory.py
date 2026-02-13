@@ -2,7 +2,7 @@ from storage import get_storage,StorageFactory
 from config.settings import settings
 
 async def test_storage(storage):
-    await storage.upload("test_folder/test1.txt", "Casey fat is stupid!!")
+    await storage.write_file("test_folder/test1.txt", "Casey fat is stupid!!")
     print(await storage.read("test_folder/test1.txt"))
     print(await storage.exists("test_folder/test1.txt"))
     print(await storage.list())

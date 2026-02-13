@@ -16,7 +16,7 @@ class Config(BaseSettings):
     S3_ACCESS_KEY_ID: str
     S3_SECRET_ACCESS_KEY: str
     BUCKET_NAME: str  = "test"  # S3 bucket name
-    STORAGE_TYPE: str = "local"
+    STORAGE_TYPE: str = "s3"
 
     MODEL_PROVIDER: str
     OPENAI_API_KEY: str
