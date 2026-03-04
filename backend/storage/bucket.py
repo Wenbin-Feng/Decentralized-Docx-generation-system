@@ -93,7 +93,7 @@ class SupabaseStorage(StorageBase):
         except ClientError as e:
             if e.response["Error"]["Code"] == "404":
                 return False
-            raise  # 其他错误（如 403 权限问题）依然抛出，方便排查
+            raise  # 其他错误（如 403 权限问题）
 
     @override
     async def list(self) -> List[str]:

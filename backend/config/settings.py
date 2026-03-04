@@ -31,6 +31,7 @@ class Config(BaseSettings):
     TEMPLATE_PREFIX: Path = "templates"
     OUTPUT_PREFIX: Path = "output"
     PROMPT_PREFIX: Path = "prompts/prompt.md"
+    REPORT_PROMPT_PREFIX: Path = "prompts/report_prompt.md"
     
 
     model_config = SettingsConfigDict(
