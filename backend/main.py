@@ -1,21 +1,16 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
-from routers.template import router as template_router
-from services import get_RenderService
+from routers.template import router as document_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    service_instance = get_RenderService()
-    app.state.render_service = service_instance
     yield
 
-    await service_instance.close()
 
 app = FastAPI(
-    title="docx render backend",
-    lifespan=lifespan
+    title="Medical Report Generation Backend",
+    lifespan=lifespan,
 )
 
-app.include_router(template_router, prefix="/api/v1")
-
-
+app.include_router(document_router, prefix="/api/v1")

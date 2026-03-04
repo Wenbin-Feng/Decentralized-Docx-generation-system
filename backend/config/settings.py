@@ -33,7 +33,7 @@ class Config(BaseSettings):
     PROMPT_PREFIX: Path = "prompts/prompt.md"
     REPORT_PROMPT_PREFIX: Path = "prompts/report_prompt.md"
     
-
+    debug: bool = True
     model_config = SettingsConfigDict(
         env_file=Proj_root / ".env", env_file_encoding="utf-8"
     )

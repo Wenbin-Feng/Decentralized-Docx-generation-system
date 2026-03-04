@@ -1,8 +1,11 @@
-from .requests import RenderRequest
-from .responses import *
+from .requests import RenderRequest, GenRequest
+from .responses import ResponseBase, RenderResponse, CaptionResponse, ReportResponse
 
 __all__ = [
     "RenderRequest",
+    "GenRequest",
     "ResponseBase",
-    "RenderResponse"
+    "RenderResponse",
+    "CaptionResponse",
+    "ReportResponse",
 ]

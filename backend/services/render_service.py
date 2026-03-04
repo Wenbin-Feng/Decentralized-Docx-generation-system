@@ -2,6 +2,7 @@ import asyncio
 import json
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict
+import os
 
 from config.settings import settings
 from handlers.word_handler import WordHandler
@@ -63,8 +64,14 @@ class RenderService:
             response = await loop.run_in_executor(
                 self.executor, self.call_llm, system_prompt, user_prompt
             )
+            data = self._extract_json_from_response(response)
+            if settings.debug:
+                await self.storage.write_file(
+                    f"temp/{template_id}.json", 
+                    json.dumps(data, ensure_ascii=False, indent=2)
+                )
             return {
-                "message": self._extract_json_from_response(response),
+                "message": data,
                 "status": "success",
                 "template_id": template_id,
             }
