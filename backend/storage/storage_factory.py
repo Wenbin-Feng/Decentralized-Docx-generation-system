@@ -1,5 +1,6 @@
 from .bucket import get_supabase_storage
 from .local_storage import get_local_storage
+from .base import StorageBase
 from config.settings import settings
 import asyncio
 

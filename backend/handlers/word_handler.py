@@ -56,6 +56,12 @@ class WordHandler:
                 image_path_str = data["image_path"]
                 image_path = Path(image_path_str)
 
+                # 如果是相对路径，转换为绝对路径（相对于 LOCAL_STORAGE_PATH）
+                if not image_path.is_absolute():
+                    base_path = Path(cls._local_storage_path)
+                    image_path = (base_path / image_path_str).resolve()
+                    logger.info(f"[WordHandler] 转换相对路径为绝对路径: {image_path_str} -> {image_path}")
+
                 # 检查图片文件是否存在
                 if image_path.exists():
                     try:

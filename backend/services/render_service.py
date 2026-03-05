@@ -1,8 +1,10 @@
 import asyncio
 import json
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Dict
 import os
+from datetime import datetime
 
 from config.settings import settings
 from handlers.word_handler import WordHandler
@@ -26,8 +28,17 @@ class RenderService:
         self.prompt = None
 
 
-    async def fill_template(self, user_text: str, template_id: str) -> Dict[str, Any]:
-        res = await self.generate_data_from_text(user_text, template_id)
+    async def fill_template(self, user_text: str, template_id: str, user_profile: dict = None, image_url: str = None) -> Dict[str, Any]:
+        """
+        填充模板
+
+        Args:
+            user_text: 用户输入的文本
+            template_id: 模板 ID
+            user_profile: 用户资料（可选，包含 username, gender, age）
+            image_url: 胸片图片路径（可选）
+        """
+        res = await self.generate_data_from_text(user_text, template_id, user_profile, image_url)
         if res.get("status") == "success":
             json_data = res["message"]
             return {
@@ -45,16 +56,37 @@ class RenderService:
         }
 
     async def generate_data_from_text(
-        self, user_text: str, template_id: str
+        self, user_text: str, template_id: str, user_profile: dict = None, image_url: str = None
     ) -> Dict[str, Any]:
         if self.prompt is None:
             self.prompt = await self.storage.read(self.prompt_prefix)
         system_prompt = self.prompt
         template_schema = await self.storage.read(self.template_prefix / template_id / "schema.json")
 
+        # 构建用户资料信息
+        profile_info = ""
+        if user_profile:
+            profile_parts = []
+            if user_profile.get("username"):
+                profile_parts.append(f"患者姓名: {user_profile['username']}")
+            if user_profile.get("gender"):
+                profile_parts.append(f"性别: {user_profile['gender']}")
+            if user_profile.get("age"):
+                profile_parts.append(f"年龄: {user_profile['age']}")
+
+            if profile_parts:
+                profile_info = "\n\n患者个人信息:\n" + "\n".join(profile_parts)
+
+        # 构建胸片图片路径信息
+        image_info = ""
+        if image_url:
+            image_info = f"\n\n胸片图片路径: {image_url}\n注意：请将此路径填入JSON的chest_xray.image_path字段中"
+
         user_prompt = f"""
         请根据以下内容生成json数据:
         {user_text}
+        {profile_info}
+        {image_info}
         你必须严格遵循如下模版来生成json数据:
         {template_schema}
         """
@@ -82,7 +114,13 @@ class RenderService:
     async def render(self, json_data: Dict[str, Any], template_id: str) -> str:
         logger.info(f"[GENERATION] Rendering document: {json_data}")
         template_path = self.template_prefix / template_id / "template.docx"
-        output_path = self.output_prefix / f"{template_id}_generation.docx"
+
+        # 使用 UUID 生成唯一文件名，避免覆盖
+        unique_id = str(uuid.uuid4())
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_filename = f"{template_id}_{timestamp}_{unique_id[:8]}.docx"
+        output_path = self.output_prefix / output_filename
+
         output_path = await WordHandler.fill_template(template_path, json_data, output_path, self.storage)
         logger.info(f"[GENERATION] Document generated successfully: {output_path}")
         return str(output_path)

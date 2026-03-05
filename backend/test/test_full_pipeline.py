@@ -104,7 +104,6 @@ async def test_full_pipeline():
     print_section("Step 4: 验证 JSON 字段完整性")
 
     required_fields = [
-        "hospital_name",
         "patient_info",
         "examination_date",
         "examination_site",

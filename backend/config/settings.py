@@ -16,7 +16,7 @@ class Config(BaseSettings):
     S3_ACCESS_KEY_ID: str
     S3_SECRET_ACCESS_KEY: str
     BUCKET_NAME: str  = "test"  # S3 bucket name
-    STORAGE_TYPE: str = "s3"
+    STORAGE_TYPE: str = "local"
 
     MODEL_PROVIDER: str
     OPENAI_API_KEY: str
@@ -32,7 +32,22 @@ class Config(BaseSettings):
     OUTPUT_PREFIX: Path = "output"
     PROMPT_PREFIX: Path = "prompts/prompt.md"
     REPORT_PROMPT_PREFIX: Path = "prompts/report_prompt.md"
-    
+
+    # Database Configuration
+    DATABASE_TYPE: str = "sqlite"  # sqlite or postgresql
+    DATABASE_URL: str = ""  # For PostgreSQL: postgresql://user:pass@localhost:5432/dbname
+    SQLITE_FILE: str = "medical_reports.db"  # SQLite 文件名（相对于项目根目录）
+
+    # JWT Configuration
+    JWT_SECRET_KEY: str = "your-secret-key-change-this-in-production-min-32-characters"
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRATION_HOURS: int = 24
+
+    # Auth Configuration
+    NONCE_EXPIRATION_MINUTES: int = 5
+    SIWE_DOMAIN: str = "localhost:5173"  # 前端域名
+    SIWE_URI: str = "http://localhost:5173"
+
     debug: bool = True
     model_config = SettingsConfigDict(
         env_file=Proj_root / ".env", env_file_encoding="utf-8"

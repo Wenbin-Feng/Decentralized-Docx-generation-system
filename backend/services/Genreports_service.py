@@ -113,10 +113,16 @@ class GenreportsService:
         if file_path.exists():
             return self._file_to_data_uri(file_path)
 
-        # 尝试从 storage 读取（如 S3 路径）
+        # 尝试从 storage 读取（如 S3 路径或相对路径）
         try:
             url = await self.storage.get_url(image_source)
             if url:
+                # 检查返回的是否是本地文件路径（而不是 HTTP URL）
+                url_path = Path(url)
+                if url_path.exists():
+                    # 转换为 base64
+                    return self._file_to_data_uri(url_path)
+                # 如果是 HTTP URL，直接返回
                 return url
         except Exception:
             pass

@@ -1,7 +1,13 @@
 import os
 import aiofiles
 from .base import StorageBase
-from typing import List, override, Union
+from typing import List, Union
+try:
+    from typing import override
+except ImportError:
+    # Python < 3.12
+    def override(func):
+        return func
 from config.settings import settings
 from fastapi import UploadFile
 class DiskStorage(StorageBase):
@@ -17,7 +23,7 @@ class DiskStorage(StorageBase):
         full_path = self._get_full_path(key)
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
         async with aiofiles.open(full_path, "wb") as f:
-            await f.write(file.read())
+            await f.write(await file.read())
 
     @override
     async def write_file(self, key: str, content: Union[str, bytes]):

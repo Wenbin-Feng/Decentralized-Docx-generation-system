@@ -1,0 +1,39 @@
+[project]
+name = "medical-report-backend"
+version = "1.0.0"
+description = "基于 SIWE 的医疗报告生成系统后端"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    # Web 框架
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.20.0",
+    "python-multipart>=0.0.6",
+
+    # 数据库（SQLite 内置，不需要 psycopg2）
+    "sqlalchemy>=1.4,<2.1",
+
+    # 认证
+    "eth-account>=0.10.0",
+    "pyjwt>=2.6.0",
+
+    # AI 模型（可选）
+    "openai>=1.0.0",
+    "anthropic>=0.10.0",
+
+    # 文档处理
+    "python-docx>=1.0.0",
+    "docxtpl>=0.16.0",
+    "lxml>=4.0.0",
+
+    # 工具库
+    "aiofiles>=23.0.0",
+    "pydantic-settings>=2.0.0",
+    "loguru>=0.6.0",
+
+    # 云存储（Supabase S3）
+    "supabase>=1.0.0",
+    "aioboto3>=11.0.0",
+    "botocore>=1.31.0",
+]
+
+

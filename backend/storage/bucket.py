@@ -1,6 +1,12 @@
 import asyncio
-from typing import List, Optional, override, Union
+from typing import List, Optional, Union
 from contextlib import asynccontextmanager
+try:
+    from typing import override
+except ImportError:
+    # Python < 3.12
+    def override(func):
+        return func
 import aioboto3
 from botocore.exceptions import ClientError
 from config.settings import settings
