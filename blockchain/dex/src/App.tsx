@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Header from "./components/Header";
+import PriceChart from "./components/PriceChart";
 import SwapCard from "./components/SwapCard";
 import PoolCard from "./components/PoolCard";
 import { useWallet } from "./hooks/useWallet";
@@ -25,7 +26,8 @@ export default function App() {
         onPageChange={setActivePage}
       />
 
-      <main className="flex-1 flex items-start justify-center pt-16 px-4">
+      <main className="flex-1 flex flex-col items-center pt-8 px-4">
+        {activePage === "swap" && <PriceChart />}
         {activePage === "swap" ? (
           <SwapCard
             swapContract={swapContract}
