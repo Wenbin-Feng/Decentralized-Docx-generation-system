@@ -1,7 +1,6 @@
 import { ethers } from "ethers";
 import { createClient } from "@supabase/supabase-js";
 
-// --- Config ---
 const RPC_URL = process.env.VITE_RPC_URL || process.env.RPC_URL || "";
 const SWAP_ADDRESS =
   process.env.VITE_SZTU_SWAP_ADDRESS || "0xe43780B83403b49DA9daC9cACAf65767fC67DBc1";
@@ -24,7 +23,6 @@ const SWAP_ABI = [
 const swapContract = new ethers.Contract(SWAP_ADDRESS, SWAP_ABI, provider);
 
 function calcPrice(ethToSztu: boolean, amountIn: bigint, amountOut: bigint): number {
-  // Price = how many SZTU per 1 ETH
   if (ethToSztu) {
     if (amountIn === 0n) return 0;
     return Number(ethers.formatEther(amountOut)) / Number(ethers.formatEther(amountIn));
@@ -34,17 +32,15 @@ function calcPrice(ethToSztu: boolean, amountIn: bigint, amountOut: bigint): num
   }
 }
 
-async function handleSwapEvent(
-  user: string,
+async function saveSwap(
+  txHash: string,
+  blockNumber: number,
+  blockTimestamp: number,
   ethToSztu: boolean,
   amountIn: bigint,
-  amountOut: bigint,
-  event: ethers.EventLog
+  amountOut: bigint
 ) {
-  const block = await event.getBlock();
-  const txHash = event.transactionHash;
-  const blockNumber = event.blockNumber;
-  const timestamp = new Date(block.timestamp * 1000).toISOString();
+  const timestamp = new Date(blockTimestamp * 1000).toISOString();
   const price = calcPrice(ethToSztu, amountIn, amountOut);
 
   let ethReserve = 0;
@@ -53,9 +49,7 @@ async function handleSwapEvent(
     const [ethRes, sztuRes] = await swapContract.getReserves();
     ethReserve = Number(ethers.formatEther(ethRes));
     sztuReserve = Number(ethers.formatEther(sztuRes));
-  } catch {
-    /* ignore */
-  }
+  } catch { /* ignore */ }
 
   const row = {
     tx_hash: txHash,
@@ -73,7 +67,7 @@ async function handleSwapEvent(
 
   const { error } = await supabase.from("swap_events").upsert(row, { onConflict: "tx_hash" });
   if (error) {
-    console.error("Supabase insert error:", error.message);
+    console.error("  ✗ Supabase error:", error.message);
   } else {
     console.log("  → Saved to Supabase");
   }
@@ -84,7 +78,7 @@ async function backfillPastEvents() {
   try {
     const currentBlock = await provider.getBlockNumber();
     const LOOKBACK = 5000;
-    const BATCH = 9; // Alchemy free tier: max 10 blocks per eth_getLogs
+    const BATCH = 9;
     const startBlock = Math.max(0, currentBlock - LOOKBACK);
     let totalFound = 0;
 
@@ -94,14 +88,12 @@ async function backfillPastEvents() {
         const events = await swapContract.queryFilter("Swap", from, to);
         for (const event of events) {
           if (!(event instanceof ethers.EventLog)) continue;
-          const [user, ethToSztu, amountIn, amountOut] = event.args;
-          await handleSwapEvent(user, ethToSztu, amountIn, amountOut, event);
+          const [, ethToSztu, amountIn, amountOut] = event.args;
+          const block = await event.getBlock();
+          await saveSwap(event.transactionHash, event.blockNumber, block.timestamp, ethToSztu, amountIn, amountOut);
           totalFound++;
         }
-      } catch {
-        // skip failed batch
-      }
-      // throttle to avoid rate limits
+      } catch { /* skip failed batch */ }
       if (from + BATCH < currentBlock) {
         await new Promise((r) => setTimeout(r, 200));
       }
@@ -120,11 +112,24 @@ async function main() {
   await backfillPastEvents();
 
   console.log("\nListening for new Swap events...");
-  swapContract.on("Swap", async (user, ethToSztu, amountIn, amountOut, event) => {
-    await handleSwapEvent(user, ethToSztu, amountIn, amountOut, event);
+
+  // ethers v6: .on() callback receives (...args, ContractEventPayload)
+  // ContractEventPayload has .log (EventLog) property
+  swapContract.on("Swap", async (...args: unknown[]) => {
+    try {
+      const payload = args[args.length - 1] as ethers.ContractEventPayload;
+      const log = payload.log;
+      const decoded = swapContract.interface.decodeEventLog("Swap", log.data, log.topics);
+      const ethToSztu = decoded[1] as boolean;
+      const amountIn = decoded[2] as bigint;
+      const amountOut = decoded[3] as bigint;
+      const block = await log.getBlock();
+      await saveSwap(log.transactionHash, log.blockNumber, block.timestamp, ethToSztu, amountIn, amountOut);
+    } catch (err) {
+      console.error("Live event error:", err);
+    }
   });
 
-  // Keep alive
   process.on("SIGINT", () => {
     console.log("\nStopping listener...");
     swapContract.removeAllListeners();

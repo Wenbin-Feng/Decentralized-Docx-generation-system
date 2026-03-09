@@ -49,15 +49,14 @@ export async function fetchOHLC(): Promise<OHLCData[]> {
   return (data || []) as OHLCData[];
 }
 
-export async function fetchRecentSwaps(limit = 20): Promise<SwapEvent[]> {
+export async function fetchAllSwaps(): Promise<SwapEvent[]> {
   const sb = getSupabase();
   if (!sb) return [];
 
   const { data, error } = await sb
     .from("swap_events")
     .select("id, tx_hash, timestamp, eth_to_sztu, amount_in, amount_out, price")
-    .order("timestamp", { ascending: false })
-    .limit(limit);
+    .order("timestamp", { ascending: true });
 
   if (error) {
     console.error("Fetch swaps error:", error.message);
