@@ -24,8 +24,8 @@ echo "🔧 启动后端服务..."
 cd backend
 
 # 安装依赖（使用 requirements.txt）
-echo "📦 安装 Python 依赖..."
-uv pip install -r requirements.txt
+# echo "📦 安装 Python 依赖..."
+# uv pip install -r requirements.txt
 
 # 检查 .env
 if [ ! -f ".env" ]; then
