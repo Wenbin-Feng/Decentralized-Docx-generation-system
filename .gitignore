@@ -3,7 +3,11 @@ __pycache__/
 *.py[cod]
 *$py.class
 .DS_Store
+
 backend/data/*
+!backend/data/templates/
+backend/data/templates/*
+!backend/data/templates/Medical_reports/
 # Environments
 .env
 .venv
