@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "X线摄影报告单",
+  "description": "X-ray photography report schema",
+  "type": "object",
+  "required": [
+    "patient_info",
+    "examination_date",
+    "examination_site",
+    "findings",
+    "diagnosis",
+    "chest_xray",
+    "report_date",
+    "doctor_name"
+  ],
+  "properties": {
+    "patient_info": {
+      "type": "object",
+      "description": "患者基本信息",
+      "required": [
+        "name",
+        "gender",
+        "age",
+        "xray_id"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "患者姓名"
+        },
+        "gender": {
+          "type": "string",
+          "description": "性别",
+          "enum": [
+            "男",
+            "女"
+          ]
+        },
+        "age": {
+          "type": "string",
+          "description": "年龄"
+        },
+        "xray_id": {
+          "type": "string",
+          "description": "X片号"
+        }
+      }
+    },
+    "examination_date": {
+      "type": "string",
+      "description": "检查日期",
+      "example": "2024年3月4日"
+    },
+    "examination_site": {
+      "type": "string",
+      "description": "检查部位",
+      "example": "胸部正位"
+    },
+    "findings": {
+      "type": "string",
+      "description": "图象所见（详细描述检查发现）",
+      "example": "胸廓左右对称，所示骨骼未见骨质异常；两肺纹理走向分布规则；两肺野清晰，双侧肺门大小、形态未见异常；纵隔影未见增宽，心影未见增大；两侧膈肌高度相称，表面光整，双侧肋膈角锐利。"
+    },
+    "diagnosis": {
+      "type": "string",
+      "description": "诊断意见",
+      "example": "胸部拍片未见明显异常。"
+    },
+    "chest_xray": {
+      "type": "object",
+      "description": "胸片影像",
+      "required": [
+        "type",
+        "image_path"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "const": "image",
+          "description": "类型标识，必须为'image'"
+        },
+        "image_path": {
+          "type": "string",
+          "description": "胸片图片路径"
+        }
+      },
+      "example": {
+        "type": "image",
+        "image_path": "/path/to/chest_xray.jpg"
+      }
+    },
+    "report_date": {
+      "type": "string",
+      "description": "报告日期",
+      "example": "2024年3月4日"
+    },
+    "doctor_name": {
+      "type": "string",
+      "description": "医生姓名"
+    }
+  }
+}
